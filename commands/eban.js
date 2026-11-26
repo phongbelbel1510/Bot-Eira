@@ -2,8 +2,7 @@ const { sellAll } = require('../utils/db');
 const { eira, num } = require('../utils/format');
 
 module.exports = {
-    name: 'ban',
-    aliases: ['banca'],
+    name: 'banca',
     description: 'Bán toàn bộ cá và rương trong túi',
     async run(msg) {
         const r = sellAll(msg.author.id);
