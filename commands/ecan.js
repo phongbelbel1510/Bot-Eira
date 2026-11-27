@@ -29,7 +29,7 @@ module.exports = {
         const zones = rods.unlockedZones(lv).map((z) => `${z.emoji} ${z.name}`).join(', ');
 
         const embed = new EmbedBuilder().setColor(0x3498db)
-            .setTitle(`🎣 ${rods.rodName(lv)} của ${msg.author.username}`)
+            .setTitle(`${rods.rodLabel(lv)} của ${msg.author.username}`)
             .addFields(
                 { name: 'Cấp / Bậc', value: `Cấp **${lv}**/${rods.MAX_LEVEL} · Bậc **${rods.tierOf(lv)}**`, inline: true },
                 { name: 'LUK', value: `**${rods.luk(lv)}** (cá hiếm ×${rods.rareMult(lv).toFixed(2).replace('.', ',')})`, inline: true },
@@ -49,7 +49,7 @@ module.exports = {
             need.push(`• ${eira(cost)} (có ${eira(u.eira)} ${u.eira >= cost ? '✅' : '❌'})`);
             const t5 = nextTier5Level(lv);
             if (t5) need.push(`⚠️ Mốc bậc 5 tiếp theo: **cấp ${t5}**`);
-            embed.addFields({ name: `Nâng lên cấp ${next.level} (dùng \`enang\`)`, value: need.join('\n') });
+            embed.addFields({ name: `Nâng lên cấp ${next.level} (dùng \`enangcan\`)`, value: need.join('\n') });
         }
         return msg.reply({ embeds: [embed] });
     },

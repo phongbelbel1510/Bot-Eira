@@ -1,5 +1,7 @@
 // Cần câu: cấp 0..100. Cần xịn hơn: chờ cá cắn ngắn hơn, thời gian giật dài hơn,
 // cá nặng hơn và LUK cao hơn (cá hiếm dễ ra hơn).
+const { ROD } = require('../emojis');
+
 const MAX_LEVEL = 100;
 
 // minLevel: cấp cần tối thiểu để vào vùng (mỗi 20 cấp là một bậc cần)
@@ -47,6 +49,8 @@ const TRASH = [
 const tierOf = (l) => ZONES.filter((z) => clampLv(l) >= z.minLevel).length; // bậc cần 1..5
 const ROD_NAMES = ['Cần tre', 'Cần sắt', 'Cần carbon', 'Cần bạch kim', 'Cần ngọc']; // mỗi 20 cấp một mốc tên
 const rodName = (l) => ROD_NAMES[tierOf(l) - 1];
+const rodIcon = (l) => ROD[tierOf(l) - 1];
+const rodLabel = (l) => `${rodIcon(l)} ${rodName(l)}`;   // vd "🎋 Cần tre"
 const unlockedZones = (l) => ZONES.filter((z) => clampLv(l) >= z.minLevel);
 
 function findZone(text) {
@@ -57,5 +61,5 @@ function findZone(text) {
 module.exports = {
     MAX_LEVEL, ZONES, CAST_COOLDOWN_MS, BIG_RATIO, TRASH, CHEST_MIN, CHEST_MAX,
     clampLv, luk, weightMult, rareMult, waitRange, reactMs,
-    chestChance, trashChance, tierOf, rodName, unlockedZones, findZone,
+    chestChance, trashChance, tierOf, rodName, rodIcon, rodLabel, unlockedZones, findZone,
 };

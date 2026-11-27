@@ -50,7 +50,7 @@ const fmtCheck = (c) => `${c.need}× ${label(c.fam, c.tier)} (có ${c.have} ${c.
 function missingNote(mats, req) {
     if (!req) return '';
     const miss = checkReq(mats, req).filter((c) => !c.ok);
-    if (!miss.length) return `✅ Đã đủ vật liệu nâng cấp lên cấp ${req.level} (\`enang\`).`;
+    if (!miss.length) return `✅ Đã đủ vật liệu nâng cấp lên cấp ${req.level} (\`enangcan\`).`;
     return `⚠️ Cấp ${req.level} còn thiếu: ` +
         miss.map((c) => `${c.need - c.have}× ${label(c.fam, c.tier)}`).join(', ') + '.';
 }

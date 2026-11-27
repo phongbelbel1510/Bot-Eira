@@ -98,7 +98,7 @@ module.exports = {
                 addChest(id, r.value);
                 embed = new EmbedBuilder().setColor(0xf1c40f)
                     .setTitle(`${CHEST} RƯƠNG BÁU!`)
-                    .setDescription(`Bạn kéo lên một **rương báu** từ đáy nước! Trị giá **${eira(r.value)}**.\nĐã cất vào túi, dùng \`eban\` để bán.`);
+                    .setDescription(`Bạn kéo lên một **rương báu** từ đáy nước! Trị giá **${eira(r.value)}**.\nĐã cất vào túi, dùng \`ebanca\` để bán.`);
             } else if (r.type === 'trash') {
                 addEira(id, r.value);
                 embed = new EmbedBuilder().setColor(0x7f8c8d)
@@ -112,7 +112,7 @@ module.exports = {
                         `**${kg(r.kg)}** · ${RARITY_NAME[r.fish.rarity]} · giá **${eira(r.value)}**` +
                         (r.big ? '\n🔥 **Cá khủng!** Nặng hơn hẳn mức thường của loài.' : '') +
                         (record ? '\n🏆 **Kỷ lục mới** của bạn!' : '') +
-                        `\n${zone.emoji} ${zone.name} · đã cất vào túi, dùng \`eban\` để bán.`,
+                        `\n${zone.emoji} ${zone.name} · đã cất vào túi, dùng \`ebanca\` để bán.`,
                     );
             }
             await click.update({ embeds: [embed], components: [] });

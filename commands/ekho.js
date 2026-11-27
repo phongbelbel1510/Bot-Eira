@@ -21,7 +21,7 @@ module.exports = {
             }
             embed.addFields({ name: `${icon(f.key, 1)} ${f.title}`, value: lines.join('\n') || '_trống_', inline: true });
         }
-        embed.setFooter({ text: any ? 'eghep để ghép · enang để nâng cấp cần' : 'Kho trống. Dùng emua để mua nguyên liệu bậc 1.' });
+        embed.setFooter({ text: any ? 'eghep để ghép · enangcan để nâng cấp cần' : 'Kho trống. Dùng eshopcan để mua nguyên liệu bậc 1.' });
         return msg.reply({ embeds: [embed] });
     },
 };
