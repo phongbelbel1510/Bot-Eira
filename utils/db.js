@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
+const { FAMILIES, MAX_TIER, TIER1_PRICE, DAILY_BUY_LIMIT } = require('../data/materials');
 
 const DB_DIR = path.join(__dirname, '..', 'database');
 fs.mkdirSync(DB_DIR, { recursive: true });
@@ -22,6 +23,13 @@ CREATE TABLE IF NOT EXISTS fish_bag (
     value   INTEGER NOT NULL DEFAULT 0,
     PRIMARY KEY (user_id, species)
 );
+CREATE TABLE IF NOT EXISTS materials (
+    user_id TEXT NOT NULL,
+    fam     TEXT NOT NULL,
+    tier    INTEGER NOT NULL,
+    qty     INTEGER NOT NULL DEFAULT 0,
+    PRIMARY KEY (user_id, fam, tier)
+);
 CREATE TABLE IF NOT EXISTS rarity_counts (
     user_id TEXT NOT NULL,
     rarity  TEXT NOT NULL,
@@ -39,6 +47,8 @@ ensureColumn('users', 'rod_level', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('users', 'best_kg', 'REAL NOT NULL DEFAULT 0');
 ensureColumn('users', 'best_fish', 'TEXT');
 ensureColumn('users', 'chests', 'INTEGER NOT NULL DEFAULT 0');
+ensureColumn('users', 'bought_day', 'TEXT');                          // ngày (giờ VN) của lần mua gần nhất
+ensureColumn('users', 'bought_qty', 'INTEGER NOT NULL DEFAULT 0');    // số bậc 1 đã mua trong ngày đó
 
 const START_EIRA = 100;
 
@@ -124,4 +134,76 @@ function sellAll(id) {
     }
 }
 
-module.exports = { raw, getUser, addEira, spend, setRodLevel, addFish, addChest, getBag, sellAll };
+
+// ===== Vật liệu nâng cấp cần =====
+// mats = { day: [q1..q5], luoi: [...], than: [...], phukien: [...] } (q[i] là số món bậc i+1)
+const emptyMats = () => Object.fromEntries(FAMILIES.map((f) => [f.key, new Array(MAX_TIER).fill(0)]));
+
+function getMats(id) {
+    getUser(id);
+    const mats = emptyMats();
+    const rows = raw.prepare('SELECT fam, tier, qty FROM materials WHERE user_id = ?').all(id);
+    for (const r of rows) if (mats[r.fam]) mats[r.fam][r.tier - 1] = r.qty;
+    return mats;
+}
+
+// Ghi lại toàn bộ kho vật liệu. Mặc định tự mở giao dịch (hoặc ghi hết hoặc không ghi gì);
+// truyền { tx: false } khi đã đang ở trong một giao dịch khác.
+function setMats(id, mats, { tx = true } = {}) {
+    getUser(id);
+    const up = raw.prepare(`
+        INSERT INTO materials (user_id, fam, tier, qty) VALUES (?, ?, ?, ?)
+        ON CONFLICT(user_id, fam, tier) DO UPDATE SET qty = excluded.qty`);
+    if (tx) raw.exec('BEGIN');
+    try {
+        for (const f of FAMILIES) {
+            for (let t = 1; t <= MAX_TIER; t++) up.run(id, f.key, t, Math.max(0, Math.floor(mats[f.key][t - 1])));
+        }
+        if (tx) raw.exec('COMMIT');
+    } catch (e) {
+        if (tx) raw.exec('ROLLBACK');
+        throw e;
+    }
+}
+
+// Ngày hiện tại theo giờ Việt Nam (UTC+7), dạng YYYY-MM-DD. Giới hạn mua reset lúc 0h giờ VN.
+const dayKey = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
+
+// Còn được mua bao nhiêu bậc 1 hôm nay
+function buyLeft(id) {
+    const u = getUser(id);
+    const used = u.bought_day === dayKey() ? u.bought_qty : 0;
+    return Math.max(0, DAILY_BUY_LIMIT - used);
+}
+
+// Mua qty món bậc 1 của nhóm fam. Trả về { ok, reason?, cost?, left? }
+function buyMaterial(id, fam, qty) {
+    const u = getUser(id);
+    qty = Math.floor(qty);
+    if (!(qty > 0)) return { ok: false, reason: 'qty' };
+    const today = dayKey();
+    const used = u.bought_day === today ? u.bought_qty : 0;
+    const left = Math.max(0, DAILY_BUY_LIMIT - used);
+    if (qty > left) return { ok: false, reason: 'limit', left };
+    const cost = qty * TIER1_PRICE;
+    if (u.eira < cost) return { ok: false, reason: 'money', cost };
+
+    raw.exec('BEGIN');
+    try {
+        raw.prepare('UPDATE users SET eira = eira - ?, bought_day = ?, bought_qty = ? WHERE id = ?')
+            .run(cost, today, used + qty, id);
+        raw.prepare(`
+            INSERT INTO materials (user_id, fam, tier, qty) VALUES (?, ?, 1, ?)
+            ON CONFLICT(user_id, fam, tier) DO UPDATE SET qty = qty + excluded.qty`).run(id, fam, qty);
+        raw.exec('COMMIT');
+    } catch (e) {
+        raw.exec('ROLLBACK');
+        throw e;
+    }
+    return { ok: true, cost, left: left - qty };
+}
+
+module.exports = {
+    raw, getUser, addEira, spend, setRodLevel, addFish, addChest, getBag, sellAll,
+    emptyMats, getMats, setMats, buyLeft, buyMaterial,
+};

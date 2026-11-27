@@ -2,6 +2,13 @@
 module.exports = {
     EIRA: '<a:eira_coin:1574962469946925106>',
     CHEST: '👑',           // rương báu dùng emoji của Huyền thoại
+    // Emoji vật liệu: MAT[nhóm][bậc - 1]
+    MAT: {
+        day:     ['🧵', '🪢', '🧶', '🐉', '🌟'],
+        luoi:    ['🪝', '🔩', '🦴', '🥈', '💠'],
+        than:    ['🎋', '🪵', '🧪', '⚫', '💎'],
+        phukien: ['🎈', '🔔', '🎞️', '👁️', '⭐'],
+    },
     RARITY: {
         common: '🪨',
         uncommon: '🌿',

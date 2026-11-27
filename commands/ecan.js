@@ -1,7 +1,9 @@
 const { EmbedBuilder } = require('discord.js');
-const { getUser, setRodLevel } = require('../utils/db');
+const { getUser, getMats, setRodLevel } = require('../utils/db');
 const rods = require('../data/rods');
-const { kg } = require('../utils/format');
+const { kg, eira } = require('../utils/format');
+const { requirement, eiraCost, nextTier5Level } = require('../data/upgrades');
+const { checkReq, fmtCheck } = require('../utils/crafting');
 
 let fileCfg = {};
 try { fileCfg = require('../config.json'); } catch {}
@@ -27,7 +29,7 @@ module.exports = {
         const zones = rods.unlockedZones(lv).map((z) => `${z.emoji} ${z.name}`).join(', ');
 
         const embed = new EmbedBuilder().setColor(0x3498db)
-            .setTitle(`🎣 Cần câu của ${msg.author.username}`)
+            .setTitle(`🎣 ${rods.rodName(lv)} của ${msg.author.username}`)
             .addFields(
                 { name: 'Cấp / Bậc', value: `Cấp **${lv}**/${rods.MAX_LEVEL} · Bậc **${rods.tierOf(lv)}**`, inline: true },
                 { name: 'LUK', value: `**${rods.luk(lv)}** (cá hiếm ×${rods.rareMult(lv).toFixed(2).replace('.', ',')})`, inline: true },
@@ -38,6 +40,17 @@ module.exports = {
                 { name: 'Cá nặng nhất', value: u.best_fish ? `${u.best_fish} — ${kg(u.best_kg)}` : 'Chưa có', inline: true },
                 { name: 'Rương báu đã câu', value: String(u.chests), inline: true },
             );
+
+        // Nâng cấp tiếp: cần gì, đã có bao nhiêu
+        if (lv < rods.MAX_LEVEL) {
+            const next = requirement(lv + 1);
+            const cost = eiraCost(next.level);
+            const need = checkReq(getMats(msg.author.id), next).map((c) => `• ${fmtCheck(c)}`);
+            need.push(`• ${eira(cost)} (có ${eira(u.eira)} ${u.eira >= cost ? '✅' : '❌'})`);
+            const t5 = nextTier5Level(lv);
+            if (t5) need.push(`⚠️ Mốc bậc 5 tiếp theo: **cấp ${t5}**`);
+            embed.addFields({ name: `Nâng lên cấp ${next.level} (dùng \`enang\`)`, value: need.join('\n') });
+        }
         return msg.reply({ embeds: [embed] });
     },
 };

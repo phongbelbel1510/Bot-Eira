@@ -45,6 +45,8 @@ const TRASH = [
 ];
 
 const tierOf = (l) => ZONES.filter((z) => clampLv(l) >= z.minLevel).length; // bậc cần 1..5
+const ROD_NAMES = ['Cần tre', 'Cần sắt', 'Cần carbon', 'Cần bạch kim', 'Cần ngọc']; // mỗi 20 cấp một mốc tên
+const rodName = (l) => ROD_NAMES[tierOf(l) - 1];
 const unlockedZones = (l) => ZONES.filter((z) => clampLv(l) >= z.minLevel);
 
 function findZone(text) {
@@ -55,5 +57,5 @@ function findZone(text) {
 module.exports = {
     MAX_LEVEL, ZONES, CAST_COOLDOWN_MS, BIG_RATIO, TRASH, CHEST_MIN, CHEST_MAX,
     clampLv, luk, weightMult, rareMult, waitRange, reactMs,
-    chestChance, trashChance, tierOf, unlockedZones, findZone,
+    chestChance, trashChance, tierOf, rodName, unlockedZones, findZone,
 };
