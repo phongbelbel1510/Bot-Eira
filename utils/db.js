@@ -1,7 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const { DatabaseSync } = require('node:sqlite');
-const { FAMILIES, MAX_TIER, TIER1_PRICE, DAILY_BUY_LIMIT } = require('../data/materials');
+const { FAMILIES, MAX_TIER, TIER1_PRICE } = require('../data/materials');
 
 const DB_DIR = path.join(__dirname, '..', 'database');
 fs.mkdirSync(DB_DIR, { recursive: true });
@@ -47,8 +47,6 @@ ensureColumn('users', 'rod_level', 'INTEGER NOT NULL DEFAULT 0');
 ensureColumn('users', 'best_kg', 'REAL NOT NULL DEFAULT 0');
 ensureColumn('users', 'best_fish', 'TEXT');
 ensureColumn('users', 'chests', 'INTEGER NOT NULL DEFAULT 0');
-ensureColumn('users', 'bought_day', 'TEXT');                          // ngày (giờ VN) của lần mua gần nhất
-ensureColumn('users', 'bought_qty', 'INTEGER NOT NULL DEFAULT 0');    // số bậc 1 đã mua trong ngày đó
 
 const START_EIRA = 100;
 
@@ -107,7 +105,7 @@ function addFish(id, species, rarity, kg, value) {
     return false;
 }
 
-// Lưu rương báu vào túi (bán ở eban cùng cá)
+// Lưu rương báu vào túi (bán ở ebanca cùng cá)
 function addChest(id, value) {
     getUser(id);
     qBagUp.run(id, 'Rương báu', 'chest', value);
@@ -166,32 +164,17 @@ function setMats(id, mats, { tx = true } = {}) {
     }
 }
 
-// Ngày hiện tại theo giờ Việt Nam (UTC+7), dạng YYYY-MM-DD. Giới hạn mua reset lúc 0h giờ VN.
-const dayKey = () => new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
-
-// Còn được mua bao nhiêu bậc 1 hôm nay
-function buyLeft(id) {
-    const u = getUser(id);
-    const used = u.bought_day === dayKey() ? u.bought_qty : 0;
-    return Math.max(0, DAILY_BUY_LIMIT - used);
-}
-
-// Mua qty món bậc 1 của nhóm fam. Trả về { ok, reason?, cost?, left? }
+// Mua qty món bậc 1 của nhóm fam (không giới hạn số lượng, chỉ cần đủ Eira). Trả về { ok, reason?, cost? }
 function buyMaterial(id, fam, qty) {
     const u = getUser(id);
     qty = Math.floor(qty);
     if (!(qty > 0)) return { ok: false, reason: 'qty' };
-    const today = dayKey();
-    const used = u.bought_day === today ? u.bought_qty : 0;
-    const left = Math.max(0, DAILY_BUY_LIMIT - used);
-    if (qty > left) return { ok: false, reason: 'limit', left };
     const cost = qty * TIER1_PRICE;
-    if (u.eira < cost) return { ok: false, reason: 'money', cost };
+    if (!Number.isSafeInteger(cost) || u.eira < cost) return { ok: false, reason: 'money', cost };
 
     raw.exec('BEGIN');
     try {
-        raw.prepare('UPDATE users SET eira = eira - ?, bought_day = ?, bought_qty = ? WHERE id = ?')
-            .run(cost, today, used + qty, id);
+        raw.prepare('UPDATE users SET eira = eira - ? WHERE id = ?').run(cost, id);
         raw.prepare(`
             INSERT INTO materials (user_id, fam, tier, qty) VALUES (?, ?, 1, ?)
             ON CONFLICT(user_id, fam, tier) DO UPDATE SET qty = qty + excluded.qty`).run(id, fam, qty);
@@ -200,10 +183,10 @@ function buyMaterial(id, fam, qty) {
         raw.exec('ROLLBACK');
         throw e;
     }
-    return { ok: true, cost, left: left - qty };
+    return { ok: true, cost };
 }
 
 module.exports = {
     raw, getUser, addEira, spend, setRodLevel, addFish, addChest, getBag, sellAll,
-    emptyMats, getMats, setMats, buyLeft, buyMaterial,
+    emptyMats, getMats, setMats, buyMaterial,
 };

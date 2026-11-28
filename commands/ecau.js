@@ -21,7 +21,7 @@ const sec = (ms) => (ms / 1000).toFixed(1).replace('.', ',');
 module.exports = {
     name: 'cau',
     aliases: ['cauca'],
-    description: 'Câu cá: chờ cá cắn rồi bấm Giật dây',
+    description: 'Câu cá: chờ cá cắn rồi ấn nút Giật dây',
     async run(msg, args) {
         const id = msg.author.id;
         if (fishing.has(id)) return msg.reply('Bạn đang câu rồi, đợi cá cắn đã nhé 🎣');
@@ -48,22 +48,28 @@ module.exports = {
             const wait = wMin + Math.random() * (wMax - wMin);
             const react = rods.reactMs(level);
 
+            // Nút Giật dây có sẵn ngay từ lúc thả cần nhưng bị mờ (chưa bấm được), cá cắn thì mới sáng lên
+            const btnId = `cau:${id}:${Date.now()}`;
+            const makeRow = (ready) => new ActionRowBuilder().addComponents(
+                new ButtonBuilder().setCustomId(btnId)
+                    .setLabel('Giật dây').setEmoji('🎣')
+                    .setStyle(ready ? ButtonStyle.Success : ButtonStyle.Secondary)
+                    .setDisabled(!ready),
+            );
+
             const sent = await msg.reply({
                 embeds: [new EmbedBuilder().setColor(0x3498db)
                     .setTitle(`${zone.emoji} ${zone.name}`)
-                    .setDescription('🎣 Bạn thả cần câu xuống nước... đợi cá cắn nhé.')],
+                    .setDescription('🎣 Bạn thả cần câu xuống nước... đợi cá cắn nhé.\nKhi nút **Giật dây** sáng lên thì ấn ngay!')],
+                components: [makeRow(false)],
             });
             await sleep(wait);
 
-            const row = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId(`cau:${id}:${Date.now()}`)
-                    .setLabel('Giật dây!').setEmoji('🎣').setStyle(ButtonStyle.Success),
-            );
             await sent.edit({
                 embeds: [new EmbedBuilder().setColor(0xf1c40f)
                     .setTitle(`${zone.emoji} ${zone.name}`)
-                    .setDescription(`❗ **Cá cắn câu rồi!** Bấm **Giật dây** trong ${sec(react)} giây!`)],
-                components: [row],
+                    .setDescription(`❗ **Cá cắn câu rồi!** Ấn nút **Giật dây** trong ${sec(react)} giây!`)],
+                components: [makeRow(true)],
             });
 
             let click = null;

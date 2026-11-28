@@ -1,9 +1,10 @@
 // utils/profile.js: gom dữ liệu hiện lên thẻ hồ sơ (ecard). Chỉ đọc database, không vẽ gì.
 // Kết quả là object thuần (JSON), đưa thẳng cho cardRenderer.js.
-const { raw, getUser, buyLeft } = require('./db');
+const { raw, getUser, getMats } = require('./db');
 const { sortedBag } = require('./bag');
+const { checkReq } = require('./crafting');
+const { requirement, eiraCost } = require('../data/upgrades');
 const rods = require('../data/rods');
-const { DAILY_BUY_LIMIT } = require('../data/materials');
 
 // Công tắc tính năng. Làm xong tính năng nào thì bật true và nối dữ liệu thật vào getProfile bên dưới.
 //   bank: ngân hàng (tiền gửi không bị cướp). Chưa có thì thẻ hiện "Sắp ra mắt".
@@ -12,16 +13,6 @@ const FEATURES = { bank: false, daily: false };
 
 const hasUser = (id) => !!raw.prepare('SELECT 1 FROM users WHERE id = ?').get(id);
 
-// Còn bao lâu đến 0h giờ Việt Nam (lúc giới hạn mua nguyên liệu reset)
-function msUntilReset() {
-    const now = Date.now() + 7 * 3600 * 1000;
-    return (Math.floor(now / 86400000) + 1) * 86400000 - now;
-}
-function fmtDur(ms) {
-    const m = Math.max(1, Math.ceil(ms / 60000));
-    const h = Math.floor(m / 60);
-    return h > 0 ? `${h} giờ ${m % 60} phút` : `${m} phút`;
-}
 const fmtN = (n) => Math.round(n).toLocaleString('vi-VN');
 
 function getProfile(id) {
@@ -36,15 +27,10 @@ function getProfile(id) {
     const fishTotal = raw.prepare('SELECT COALESCE(SUM(n), 0) AS n FROM rarity_counts WHERE user_id = ?').get(id).n;
 
     const bag = getBagStats(id);
-    const left = buyLeft(id);
 
     // 3 ô "nhịp độ hàng ngày" ở cuối thẻ. status: ready (xanh) | wait (vàng) | idle (xám) | soon (xám, chưa có tính năng)
     const activities = [
-        {
-            title: 'NGUYÊN LIỆU HÔM NAY', cmd: 'eshopcan',
-            status: left > 0 ? 'ready' : 'wait',
-            line: left > 0 ? `Sẵn sàng · còn ${fmtN(left)}/${fmtN(DAILY_BUY_LIMIT)} món` : `Hết lượt · reset sau ${fmtDur(msUntilReset())}`,
-        },
+        { title: 'NÂNG CẦN CÂU', cmd: 'enangcan', ...upgradeStatus(u, id) },
         {
             title: 'TÚI CÁ', cmd: 'eca',
             status: bag.count > 0 ? 'ready' : 'idle',
@@ -65,6 +51,17 @@ function getProfile(id) {
         chests: u.chests, fishTotal,
         activities,
     };
+}
+
+// Ô "nâng cần câu": đủ nguyên liệu và Eira để nâng lên cấp kế chưa
+function upgradeStatus(u, id) {
+    if (u.rod_level >= rods.MAX_LEVEL) return { status: 'idle', line: 'Cần câu đã đạt cấp tối đa' };
+    const next = requirement(u.rod_level + 1);
+    const lackMats = checkReq(getMats(id), next).some((c) => !c.ok);
+    const lackEira = u.eira < eiraCost(next.level);
+    if (!lackMats && !lackEira) return { status: 'ready', line: `Đủ điều kiện nâng lên cấp ${next.level}` };
+    const what = lackMats && lackEira ? 'nguyên liệu và Eira' : lackMats ? 'nguyên liệu' : 'Eira';
+    return { status: 'wait', line: `Cấp ${next.level}: thiếu ${what}` };
 }
 
 function getBagStats(id) {

@@ -1,9 +1,10 @@
-// Vật liệu nâng cấp cần câu: 4 nhóm x 5 bậc. Chỉ bậc 1 mua ở cửa hàng (emua),
+// Vật liệu nâng cấp cần câu: 4 nhóm x 5 bậc. Chỉ bậc 1 mua ở cửa hàng (eshopcan),
 // các bậc cao hơn chỉ có thể ghép từ bậc ngay dưới (eghep), tỉ lệ 10:1.
 const MAX_TIER = 5;
 const MERGE_RATIO = 10;          // 10 món bậc dưới -> 1 món bậc trên
-const TIER1_PRICE = 2;           // giá 1 món bậc 1 ở cửa hàng (Eira)
-const DAILY_BUY_LIMIT = 1000;    // mỗi ngày mua tối đa 1.000 món bậc 1 (chung cho 4 nhóm)
+// Giá 1 món bậc 1 ở cửa hàng (Eira). Không giới hạn số lượng mua; độ dài quá trình nâng cần do giá này
+// và COST_SCALE trong data/upgrades.js quyết định. Bậc k quy ra bậc 1 là 10^(k-1) món.
+const TIER1_PRICE = 250;
 const MAX_MERGE_PER_CMD = 1000;  // mỗi lệnh eghep <số> tối đa 1.000 món ra
 
 // names[0] = bậc 1 ... names[4] = bậc 5
@@ -50,6 +51,6 @@ function findRecipe(text) {
 }
 
 module.exports = {
-    MAX_TIER, MERGE_RATIO, TIER1_PRICE, DAILY_BUY_LIMIT, MAX_MERGE_PER_CMD,
+    MAX_TIER, MERGE_RATIO, TIER1_PRICE, MAX_MERGE_PER_CMD,
     FAMILIES, RECIPES, famOf, matName, norm, findFamily, findRecipe,
 };

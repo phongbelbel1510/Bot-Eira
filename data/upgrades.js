@@ -29,8 +29,11 @@ function requirement(level) {
     return { level, fam, items };
 }
 
-// Chi phí Eira mỗi cấp: 30 + 1,5 x cấp^1,6
-const eiraCost = (level) => Math.round(30 + 1.5 * Math.pow(level, 1.6));
+// Chi phí Eira mỗi cấp (ngoài vật liệu): COST_SCALE x (30 + 1,5 x cấp^1,6), làm tròn đến trăm.
+// Chỉnh COST_SCALE (cùng TIER1_PRICE trong data/materials.js) để rút ngắn / kéo dài quá trình nâng cần.
+// Với 250 và 350: người câu khoảng 40 lần/ngày mất khoảng 130 ngày để lên cấp 100.
+const COST_SCALE = 350;
+const eiraCost = (level) => Math.round((COST_SCALE * (30 + 1.5 * Math.pow(level, 1.6))) / 100) * 100;
 
 // Cấp mốc bậc 5 gần nhất mà người chơi chưa đạt (để báo trước), hoặc null
 const nextTier5Level = (current) => TIER5_LEVELS.find((l) => l > current) || null;

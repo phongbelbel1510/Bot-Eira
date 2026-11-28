@@ -22,9 +22,11 @@ const luk = (l) => clampLv(l);                         // LUK = cấp
 const weightMult = (l) => 1 + 0.012 * clampLv(l);      // cấp 100 -> x2,2
 const rareMult = (l) => 1 + 0.03 * clampLv(l);         // cấp 100 -> x4 (từ Hiếm trở lên)
 
-// Chờ cá cắn: 6-12 giây ở cấp 0, còn 3-6 giây ở cấp 100
+// Chờ cá cắn: 3,3-6,6 giây ở cấp 0, còn 1,65-3,3 giây ở cấp 100.
+// WAIT_SCALE = 0.55 nghĩa là giảm 45% so với bản cũ (6-12 giây -> 3-6 giây). Muốn giảm 40% đặt 0.6, giảm 50% đặt 0.5.
+const WAIT_SCALE = 0.55;
 function waitRange(l) {
-    const f = 1 - 0.5 * clampLv(l) / MAX_LEVEL;
+    const f = WAIT_SCALE * (1 - 0.5 * clampLv(l) / MAX_LEVEL);
     return [Math.round(6000 * f), Math.round(12000 * f)];
 }
 
