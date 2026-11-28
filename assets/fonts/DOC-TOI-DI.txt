@@ -1,0 +1,5 @@
+Thu muc nay dat vao: <thu-muc-bot>/assets/fonts   (chu thuong, dung ten "assets" va "fonts" tren Linux)
+kcard.js tu nap moi file .ttf/.otf/.ttc o day khi bot khoi dong.
+DejaVu Sans: ho tro tieng Viet co dau (4 kieu: thuong, dam, nghieng, dam nghieng).
+DejaVu Math TeX Gyre: ho tro chu toan hoc dung lam ten kieu dac biet.
+Giay phep DejaVu cho phep dung va phan phoi tu do (xem GIAY-PHEP-DejaVu.txt).
